@@ -1,10 +1,11 @@
-import express from "express";
-import {
+const express = require("express");
+// Import the analytics controller functions
+const {
   getCallVolumes,
   getTotalCallTimePerOfficer,
   getCallsPerOfficerPerDay,
-} from "../controllers/analyticsController.js";
-import { protect } from "../middleware/authMiddleware.js";
+} = require("../controllers/analyticsController");
+const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -13,4 +14,4 @@ router.get("/volumes", protect, getCallVolumes);
 router.get("/call-time-per-officer", protect, getTotalCallTimePerOfficer);
 router.get("/calls-per-officer-per-day", protect, getCallsPerOfficerPerDay);
 
-export default router;
+module.exports = router;

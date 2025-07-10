@@ -1,32 +1,27 @@
-import express from "express";
-import path from "path";
-import fs from "fs";
-import bodyParser from "body-parser";
-import cors from "cors";
-import dotenv from "dotenv";
-import morgan from "morgan";
-import helmet from "helmet";
-import authRoutes from "./routes/authRoutes.js";
-import officerRoutes from "./routes/officerRoutes.js";
-import clientRoutes from "./routes/clientRoutes.js";
-import callRoutes from "./routes/callRoutes.js";
-import analyticsRoutes from "./routes/analyticsRoutes.js";
-import { fileURLToPath } from "url";
-// import { createLogger } from "logger";
+const express = require("express");
+const path = require("path");
+const fs = require("fs");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const dotenv = require("dotenv").config();
+const morgan = require("morgan");
+const helmet = require("helmet");
+const authRoutes = require("./routes/authRoutes.js");
+const officerRoutes = require("./routes/officerRoutes.js");
+const clientRoutes = require("./routes/clientRoutes.js");
+const callRoutes = require("./routes/callRoutes.js");
+const analyticsRoutes = require("./routes/analyticsRoutes.js");
+const { createLogger } = require("logger"); // Commented, see note below
 
-// Load environment variables
-dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+// Logs directory setup
 const logDir = path.join(__dirname, "logs");
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
 }
+
 // Logger setup
-// const logger = createLogger("logs/app.log");
-// logger.setLevel("info");
+const logger = createLogger("logs/app.log");
+logger.setLevel("info");
 
 // Create express app
 const app = express();
@@ -51,15 +46,15 @@ app.get("/", (req, res) => {
   res.send("Sales Tracker Backend API is running!");
 });
 
-//error handling middleware
+// Error handling middleware
 app.use((err, req, res, next) => {
-  // logger.error(`Error occurred: ${err.message}`);
+  logger.error(`Error occurred: ${err.message}`);
   res.status(500).send("Something broke!");
 });
 
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  // logger.info(`Server is running on port ${PORT}`);
+  logger.info(`Server is running on port ${PORT}`);
   console.log(`Server is running on port ${PORT}`);
 });

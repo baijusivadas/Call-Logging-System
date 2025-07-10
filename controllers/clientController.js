@@ -1,109 +1,83 @@
-import db from '../models/index.js';
+const { createLogger } = require("logger");
+const { sendResponse } = require("../lib/utils");
+const clientService = require("../services/clientService");
 
-// import { createLogger } from "logger";
-
-// const logger = createLogger("logs/controller.log");
-// logger.setLevel("debug");
-
-const { Client, Call } = db;
+const logger = createLogger("logs/controller.log");
+logger.setLevel("debug");
 
 // Create a new client
-const createClient = async (req, res) => {
-  const { name, contactInfo, region, status } = req.body;
+exports.createClient = async (req, res) => {
+  logger.debug("Creating a new client");
+
   try {
-    const client = await Client.create({ name, contactInfo, region, status });
-    res.status(201).json({
-      id: client.id,
-      name: client.name,
-      message: 'Client created successfully',
-    });
+    const newClient = await clientService.createClient(req.body);
+    return sendResponse(res, 201, true, "Client created successfully", newClient);
   } catch (error) {
-    console.error('Error creating client:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    logger.error("Error creating client:", error);
+    return sendResponse(res, 500, false, "Server error", { error: error.message });
   }
 };
 
 // Get all clients
-const getClients = async (req, res) => {
+exports.getClients = async (req, res) => {
+  logger.debug("Fetching all clients");
+
   try {
-    const clients = await Client.findAll();
-    res.json(clients);
+    const clients = await clientService.getAllClients();
+    return sendResponse(res, 200, true, "Clients fetched successfully", clients);
   } catch (error) {
-    console.error('Error fetching clients:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    logger.error("Error fetching clients:", error);
+    return sendResponse(res, 500, false, "Server error", { error: error.message });
   }
 };
 
 // Get a single client by ID
-const getClientById = async (req, res) => {
-  try {
-    const client = await Client.findByPk(req.params.id, {
-      include: [{
-        model: Call,
-        as: 'calls',
-        attributes: ['id', 'officerId', 'duration', 'callType', 'callOutcome', 'comment', 'timestamp'],
-      }],
-    });
+exports.getClientById = async (req, res) => {
+  const { id } = req.params;
+  logger.debug(`Fetching client by ID: ${id}`);
 
-    if (client) {
-      res.json(client);
-    } else {
-      res.status(404).json({ message: 'Client not found' });
-    }
+  try {
+    const client = await clientService.getClientById(id);
+    return sendResponse(res, 200, true, "Client fetched successfully", client);
   } catch (error) {
-    console.error('Error fetching client:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    logger.error("Error fetching client:", error);
+    if (error.code === "NOT_FOUND") {
+      return sendResponse(res, 404, false, error.message);
+    }
+    return sendResponse(res, 500, false, "Server error", { error: error.message });
   }
 };
 
 // Update a client
-const updateClient = async (req, res) => {
-  const { name, contactInfo, region, status } = req.body;
+exports.updateClient = async (req, res) => {
+  const { id } = req.params;
+  logger.debug(`Updating client with ID: ${id}`);
+
   try {
-    const client = await Client.findByPk(req.params.id);
-
-    if (client) {
-      client.name = name || client.name;
-      client.contactInfo = contactInfo || client.contactInfo;
-      client.region = region || client.region;
-      client.status = status || client.status;
-
-      await client.save();
-      res.json({
-        id: client.id,
-        name: client.name,
-        message: 'Client updated successfully',
-      });
-    } else {
-      res.status(404).json({ message: 'Client not found' });
-    }
+    const updatedClient = await clientService.updateClient(id, req.body);
+    return sendResponse(res, 200, true, "Client updated successfully", updatedClient);
   } catch (error) {
-    console.error('Error updating client:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    logger.error("Error updating client:", error);
+    if (error.code === "NOT_FOUND") {
+      return sendResponse(res, 404, false, error.message);
+    }
+    return sendResponse(res, 500, false, "Server error", { error: error.message });
   }
 };
 
 // Delete a client
-const deleteClient = async (req, res) => {
+exports.deleteClient = async (req, res) => {
+  const { id } = req.params;
+  logger.debug(`Deleting client with ID: ${id}`);
+
   try {
-    const client = await Client.findByPk(req.params.id);
-
-    if (client) {
-      await client.destroy();
-      res.json({ message: 'Client removed' });
-    } else {
-      res.status(404).json({ message: 'Client not found' });
-    }
+    await clientService.deleteClient(id);
+    return sendResponse(res, 200, true, "Client deleted successfully");
   } catch (error) {
-    console.error('Error deleting client:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    logger.error("Error deleting client:", error);
+    if (error.code === "NOT_FOUND") {
+      return sendResponse(res, 404, false, error.message);
+    }
+    return sendResponse(res, 500, false, "Server error", { error: error.message });
   }
-};
-
-export {
-  createClient,
-  getClients,
-  getClientById,
-  updateClient,
-  deleteClient,
 };

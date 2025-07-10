@@ -1,7 +1,7 @@
-import { DataTypes } from 'sequelize';
+const { DataTypes } = require("sequelize");
 
 // Define the Officer model
-export default (sequelize) => {
+module.exports = (sequelize) => {
   const Officer = sequelize.define('Officer', {
     id: {
       type: DataTypes.UUID,

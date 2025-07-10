@@ -1,8 +1,8 @@
-import { DataTypes } from 'sequelize';
+const { DataTypes } = require("sequelize");
 
 // Define the Client model
-export default (sequelize) => {
-  const Client = sequelize.define('Client', {
+module.exports = (sequelize) => {
+  const Client = sequelize.define("Client", {
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,

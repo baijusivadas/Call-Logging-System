@@ -1,7 +1,7 @@
-import { DataTypes } from "sequelize";
+const { DataTypes } = require("sequelize");
 
 // Define the Call model
-export default (sequelize) => {
+module.exports = (sequelize) => {
   const Call = sequelize.define(
     "Call",
     {

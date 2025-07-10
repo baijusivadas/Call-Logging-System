@@ -1,97 +1,56 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import db from "../models/index.js";
-// import { createLogger } from "logger";
+const { createLogger } = require("logger");
+const { sendResponse } = require("../lib/utils");
+const authService = require("../services/authService");
 
-// const logger = createLogger("logs/controller.log");
-// logger.setLevel("debug");
+const logger = createLogger("logs/controller.log");
+logger.setLevel("debug");
 
-const { Officer } = db;
-
-// Helper function to generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "1h", // Token expires in 1 hour
-  });
-};
-
-const registerOfficer = async (req, res) => {
-  const { name, email, password, contactInfo, region, status } = req.body;
+// Register a new officer
+exports.registerOfficer = async (req, res) => {
+  logger.debug("Registering new officer");
 
   try {
-    // Check if officer already exists
-    const officerExists = await Officer.findOne({ where: { email } });
-    if (officerExists) {
-      return res
-        .status(400)
-        .json({ message: "Officer with this email already exists" });
-    }
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create new officer
-    const officer = await Officer.create({
-      name,
-      email,
-      password: hashedPassword,
-      contactInfo,
-      region,
-      status,
-    });
-
-    res.status(201).json({
-      id: officer.id,
-      name: officer.name,
-      email: officer.email,
-      token: generateToken(officer.id),
-      message: "Officer registered successfully",
-    });
+    const officer = await authService.registerOfficer(req.body);
+    return sendResponse(res, 201, true, "Officer registered successfully", officer);
   } catch (error) {
-    console.error("Error registering officer:", error);
-    res.status(500).json({
-      message: "Server error during registration",
-      error: error.message,
-    });
+    logger.error("Error registering officer:", error);
+    if (error.code === "DUPLICATE") {
+      return sendResponse(res, 400, false, error.message);
+    }
+    return sendResponse(res, 500, false, "Server error during registration", { error: error.message });
   }
 };
 
-const loginOfficer = async (req, res) => {
+// Login an officer
+exports.loginOfficer = async (req, res) => {
+  logger.debug("Logging in officer");
+
   const { email, password } = req.body;
 
   try {
-    // Check for officer email
-    const officer = await Officer.findOne({ where: { email } });
-
-    // Check password
-    if (officer && (await bcrypt.compare(password, officer.password))) {
-      res.json({
-        id: officer.id,
-        name: officer.name,
-        email: officer.email,
-        token: generateToken(officer.id),
-        message: "Logged in successfully",
-      });
-    } else {
-      res.status(401).json({ message: "Invalid email or password" });
-    }
+    const officer = await authService.loginOfficer(email, password);
+    return sendResponse(res, 200, true, "Logged in successfully", officer);
   } catch (error) {
-    console.error("Error logging in officer:", error);
-    res
-      .status(500)
-      .json({ message: "Server error during login", error: error.message });
+    logger.error("Error logging in officer:", error);
+    if (error.code === "UNAUTHORIZED") {
+      return sendResponse(res, 401, false, error.message);
+    }
+    return sendResponse(res, 500, false, "Server error during login", { error: error.message });
   }
 };
 
-// Get current officer's profile (protected route)
-const getOfficerProfile = async (req, res) => {
-  // req.officer is set by the protect middleware
-  if (req.officer) {
-    res.json(req.officer);
-  } else {
-    res.status(404).json({ message: "Officer not found" });
+// Get current officer's profile (protected)
+exports.getOfficerProfile = async (req, res) => {
+  logger.debug("Fetching officer profile");
+
+  try {
+    const officerProfile = await authService.getOfficerProfile(req.officer);
+    return sendResponse(res, 200, true, "Officer profile fetched successfully", officerProfile);
+  } catch (error) {
+    logger.error("Error fetching officer profile:", error);
+    if (error.code === "NOT_FOUND") {
+      return sendResponse(res, 404, false, error.message);
+    }
+    return sendResponse(res, 500, false, "Server error fetching profile", { error: error.message });
   }
 };
-
-export { registerOfficer, loginOfficer, getOfficerProfile };

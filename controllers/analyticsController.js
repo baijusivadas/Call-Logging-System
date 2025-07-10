@@ -1,102 +1,77 @@
-// import { createLogger } from "logger";
-import db from "../models/index.js";
-import { fn, col } from "sequelize";
+const { createLogger } = require("logger");
+const { sendResponse } = require("../lib/utils");
+const callAnalyticsService = require("../services/analyticsService");
 
-// const logger = createLogger("logs/controller.log");
-// logger.setLevel('debug');
-
-const { Call, Officer } = db;
+const logger = createLogger("logs/controller.log");
+logger.setLevel("debug");
 
 // Get daily and monthly call volumes
-const getCallVolumes = async (req, res) => {
+exports.getCallVolumes = async (req, res) => {
+  logger.debug("Fetching daily and monthly call volumes");
+
   try {
-    // Daily Call Volumes
-    const dailyCalls = await Call.findAll({
-      attributes: [
-        [fn("date_trunc", "day", col("timestamp")), "date"],
-        [fn("count", col("id")), "totalCalls"],
-      ],
-      group: [fn("date_trunc", "day", col("timestamp"))],
-      order: [[fn("date_trunc", "day", col("timestamp")), "ASC"]],
-    });
-
-    // Monthly Call Volumes
-    const monthlyCalls = await Call.findAll({
-      attributes: [
-        [fn("date_trunc", "month", col("timestamp")), "month"],
-        [fn("count", col("id")), "totalCalls"],
-      ],
-      group: [fn("date_trunc", "month", col("timestamp"))],
-      order: [[fn("date_trunc", "month", col("timestamp")), "ASC"]],
-    });
-
-    res.json({ dailyCalls, monthlyCalls });
+    const result = await callAnalyticsService.getCallVolumes();
+    return sendResponse(
+      res,
+      200,
+      true,
+      "Call volumes fetched successfully",
+      result
+    );
   } catch (error) {
-    console.error("Error fetching call volumes:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    logger.error("Error fetching call volumes:", error);
+    return sendResponse(res, 500, false, "Server error fetching call volumes", {
+      error: error.message,
+    });
   }
 };
 
 // Get total call time per officer
-const getTotalCallTimePerOfficer = async (req, res) => {
-  try {
-    const callTimePerOfficer = await Call.findAll({
-      attributes: [
-        "officerId",
-        [fn("sum", col("duration")), "totalCallDuration"], // Sum of duration in seconds
-      ],
-      include: [
-        {
-          model: Officer,
-          as: "officer",
-          attributes: ["name", "email"],
-        },
-      ],
-      group: ["officer.id", "officer.name", "officer.email", "Call.officerId"], // Group by officer details
-      order: [[fn("sum", col("duration")), "DESC"]],
-    });
+exports.getTotalCallTimePerOfficer = async (req, res) => {
+  logger.debug("Fetching total call time per officer");
 
-    res.json(callTimePerOfficer);
+  try {
+    const result = await callAnalyticsService.getTotalCallTimePerOfficer();
+    return sendResponse(
+      res,
+      200,
+      true,
+      "Total call time per officer fetched successfully",
+      result
+    );
   } catch (error) {
-    console.error("Error fetching total call time per officer:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    logger.error("Error fetching total call time per officer:", error);
+    return sendResponse(
+      res,
+      500,
+      false,
+      "Server error fetching call time per officer",
+      { error: error.message }
+    );
   }
 };
 
-// Get calls per officer, per day
-const getCallsPerOfficerPerDay = async (req, res) => {
-  try {
-    const callsPerOfficerPerDay = await Call.findAll({
-      attributes: [
-        "officerId",
-        [fn("date_trunc", "day", col("timestamp")), "date"],
-        [fn("count", col("id")), "totalCalls"],
-      ],
-      include: [
-        {
-          model: Officer,
-          as: "officer",
-          attributes: ["name", "email"],
-        },
-      ],
-      group: [
-        "officer.id",
-        "officer.name",
-        "officer.email",
-        fn("date_trunc", "day", col("timestamp")),
-        "Call.officerId",
-      ],
-      order: [
-        [fn("date_trunc", "day", col("timestamp")), "ASC"],
-        ["officerId", "ASC"],
-      ],
-    });
+// Get calls per officer per day
+exports.getCallsPerOfficerPerDay = async (req, res) => {
+  logger.debug("Fetching calls per officer per day");
 
-    res.json(callsPerOfficerPerDay);
+  try {
+    const result = await callAnalyticsService.getCallsPerOfficerPerDay();
+    return sendResponse(
+      res,
+      200,
+      true,
+      "Calls per officer per day fetched successfully",
+      result
+    );
   } catch (error) {
-    console.error("Error fetching calls per officer per day:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    logger.error("Error fetching calls per officer per day:", error);
+    return sendResponse(
+      res,
+      500,
+      false,
+      "Server error fetching calls per officer per day",
+      { error: error.message }
+    );
   }
 };
-
-export { getCallVolumes, getTotalCallTimePerOfficer, getCallsPerOfficerPerDay };

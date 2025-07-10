@@ -1,23 +1,23 @@
-import express from 'express';
-import {
+const express = require("express");
+const {
   createClient,
   getClients,
   getClientById,
   updateClient,
   deleteClient,
-} from '../controllers/clientController.js';
-import { protect } from '../middleware/authMiddleware.js';
+} = require("../controllers/clientController.js");
+
+const { protect } = require("../middleware/authMiddleware.js");
 
 const router = express.Router();
 
 // All client routes are protected
-router.route('/')
-  .post(protect, createClient)
-  .get(protect, getClients);
+router.route("/").post(protect, createClient).get(protect, getClients);
 
-router.route('/:id')
+router
+  .route("/:id")
   .get(protect, getClientById)
   .put(protect, updateClient)
   .delete(protect, deleteClient);
 
-export default router;
+module.exports = router;

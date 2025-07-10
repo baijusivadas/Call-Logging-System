@@ -1,113 +1,73 @@
-import db from "../models/index.js";
-import bcrypt from "bcrypt";
-// import { createLogger } from "logger";
+const { createLogger } = require("logger");
+const { sendResponse } = require("../lib/utils");
+const officerService = require("../services/officerService");
 
-// const logger = createLogger("logs/controller.log");
-// logger.setLevel("debug");
-
-const { Officer, Call } = db;
+const logger = createLogger("logs/controller.log");
+logger.setLevel("debug");
 
 // Get all officers
-const getOfficers = async (req, res) => {
+exports.getOfficers = async (req, res) => {
+  logger.debug("Fetching all officers");
+
   try {
-    const officers = await Officer.findAll({
-      attributes: { exclude: ["password"] }, // Exclude passwords
-    });
-    res.json(officers);
+    const officers = await officerService.getAllOfficers();
+    return sendResponse(res, 200, true, "Officers fetched successfully", officers);
   } catch (error) {
-    console.error("Error fetching officers:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    logger.error("Error fetching officers:", error);
+    return sendResponse(res, 500, false, "Server error", { error: error.message });
   }
 };
 
 // Get a single officer by ID
-const getOfficerById = async (req, res) => {
-  try {
-    const officer = await Officer.findByPk(req.params.id, {
-      attributes: { exclude: ["password"] },
-      include: [
-        {
-          model: Call,
-          as: "calls",
-          attributes: [
-            "id",
-            "clientId",
-            "duration",
-            "callType",
-            "callOutcome",
-            "comment",
-            "timestamp",
-          ],
-        },
-      ],
-    });
+exports.getOfficerById = async (req, res) => {
+  const { id } = req.params;
+  logger.debug(`Fetching officer by ID: ${id}`);
 
-    if (officer) {
-      res.json(officer);
-    } else {
-      res.status(404).json({ message: "Officer not found" });
+  try {
+    const officer = await officerService.getOfficerById(id);
+    if (!officer) {
+      return sendResponse(res, 404, false, "Officer not found");
     }
+    return sendResponse(res, 200, true, "Officer fetched successfully", officer);
   } catch (error) {
-    console.error("Error fetching officer:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    logger.error("Error fetching officer:", error);
+    return sendResponse(res, 500, false, "Server error", { error: error.message });
   }
 };
 
 // Update an officer
-const updateOfficer = async (req, res) => {
-  const { name, email, password, contactInfo, region, status } = req.body;
+exports.updateOfficer = async (req, res) => {
+  const { id } = req.params;
+  logger.debug(`Updating officer with ID: ${id}`);
+
   try {
-    const officer = await Officer.findByPk(req.params.id);
-
-    if (officer) {
-      officer.name = name || officer.name;
-      officer.email = email || officer.email;
-      officer.contactInfo = contactInfo || officer.contactInfo;
-      officer.region = region || officer.region;
-      officer.status = status || officer.status;
-
-      if (password) {
-        const salt = await bcrypt.genSalt(10);
-        officer.password = await bcrypt.hash(password, salt);
-      }
-
-      await officer.save();
-      res.json({
-        id: officer.id,
-        name: officer.name,
-        email: officer.email,
-        contactInfo: officer.contactInfo,
-        region: officer.region,
-        status: officer.status,
-        message: "Officer updated successfully",
-      });
-    } else {
-      res.status(404).json({ message: "Officer not found" });
-    }
+    const updatedOfficer = await officerService.updateOfficer(id, req.body);
+    return sendResponse(res, 200, true, "Officer updated successfully", updatedOfficer);
   } catch (error) {
-    console.error("Error updating officer:", error);
-    if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(400).json({ message: "Email already in use" });
+    logger.error("Error updating officer:", error);
+    if (error.code === "EMAIL_IN_USE") {
+      return sendResponse(res, 400, false, "Email already in use");
     }
-    res.status(500).json({ message: "Server error", error: error.message });
+    if (error.message === "Officer not found") {
+      return sendResponse(res, 404, false, error.message);
+    }
+    return sendResponse(res, 500, false, "Server error", { error: error.message });
   }
 };
 
 // Delete an officer
-const deleteOfficer = async (req, res) => {
-  try {
-    const officer = await Officer.findByPk(req.params.id);
+exports.deleteOfficer = async (req, res) => {
+  const { id } = req.params;
+  logger.debug(`Deleting officer with ID: ${id}`);
 
-    if (officer) {
-      await officer.destroy();
-      res.json({ message: "Officer removed" });
-    } else {
-      res.status(404).json({ message: "Officer not found" });
-    }
+  try {
+    await officerService.deleteOfficer(id);
+    return sendResponse(res, 200, true, "Officer deleted successfully");
   } catch (error) {
-    console.error("Error deleting officer:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    logger.error("Error deleting officer:", error);
+    if (error.message === "Officer not found") {
+      return sendResponse(res, 404, false, error.message);
+    }
+    return sendResponse(res, 500, false, "Server error", { error: error.message });
   }
 };
-
-export { getOfficers, getOfficerById, updateOfficer, deleteOfficer };

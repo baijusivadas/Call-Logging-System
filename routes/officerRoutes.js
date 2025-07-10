@@ -1,11 +1,11 @@
-import express from "express";
-import {
+const express = require("express");
+const {
   getOfficers,
   getOfficerById,
   updateOfficer,
   deleteOfficer,
-} from "../controllers/officerController.js";
-import { protect } from "../middleware/authMiddleware.js";
+} = require("../controllers/officerController");
+const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -17,4 +17,4 @@ router
   .put(protect, updateOfficer)
   .delete(protect, deleteOfficer);
 
-export default router;
+module.exports = router;
