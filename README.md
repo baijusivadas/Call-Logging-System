@@ -1,4 +1,4 @@
-# Node.js Sales Tracking Backend
+# Call-Logging-System Backend
 
 ## Overview
 This application manages and tracks field sales team activities, including:
@@ -28,5 +28,5 @@ We chose PostgreSQL (SQL) because:
 
 ### 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/sales-tracking-backend.git
+git 
 cd sales-tracking-backend

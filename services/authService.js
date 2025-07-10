@@ -71,19 +71,4 @@ exports.loginOfficer = async (email, password) => {
   }
 };
 
-/**
- * Get officer profile
- */
-exports.getOfficerProfile = async (officer) => {
-  try {
-    if (!officer) {
-      const error = new Error("Officer not found");
-      error.code = "NOT_FOUND";
-      throw error;
-    }
 
-    return officer;
-  } catch (error) {
-    throw new Error(error.message || "Error fetching officer profile");
-  }
-};

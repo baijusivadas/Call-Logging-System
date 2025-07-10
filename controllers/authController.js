@@ -11,13 +11,21 @@ exports.registerOfficer = async (req, res) => {
 
   try {
     const officer = await authService.registerOfficer(req.body);
-    return sendResponse(res, 201, true, "Officer registered successfully", officer);
+    return sendResponse(
+      res,
+      201,
+      true,
+      "Officer registered successfully",
+      officer
+    );
   } catch (error) {
     logger.error("Error registering officer:", error);
     if (error.code === "DUPLICATE") {
       return sendResponse(res, 400, false, error.message);
     }
-    return sendResponse(res, 500, false, "Server error during registration", { error: error.message });
+    return sendResponse(res, 500, false, "Server error during registration", {
+      error: error.message,
+    });
   }
 };
 
@@ -35,22 +43,31 @@ exports.loginOfficer = async (req, res) => {
     if (error.code === "UNAUTHORIZED") {
       return sendResponse(res, 401, false, error.message);
     }
-    return sendResponse(res, 500, false, "Server error during login", { error: error.message });
+    return sendResponse(res, 500, false, "Server error during login", {
+      error: error.message,
+    });
   }
 };
 
 // Get current officer's profile (protected)
 exports.getOfficerProfile = async (req, res) => {
   logger.debug("Fetching officer profile");
-
   try {
-    const officerProfile = await authService.getOfficerProfile(req.officer);
-    return sendResponse(res, 200, true, "Officer profile fetched successfully", officerProfile);
+    if (!req.officer) {
+      return sendResponse(res, 404, false, "Officer not found");
+    }
+
+    return sendResponse(
+      res,
+      200,
+      true,
+      "Officer profile fetched successfully",
+      req.officer
+    );
   } catch (error) {
     logger.error("Error fetching officer profile:", error);
-    if (error.code === "NOT_FOUND") {
-      return sendResponse(res, 404, false, error.message);
-    }
-    return sendResponse(res, 500, false, "Server error fetching profile", { error: error.message });
+    return sendResponse(res, 500, false, "Server error fetching profile", {
+      error: error.message,
+    });
   }
 };
