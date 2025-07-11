@@ -42,7 +42,7 @@ We chose PostgreSQL (SQL) because:
 
 ## Quick Setup
 
-Clone:
+Clone: https://github.com/baijusivadas/Call-Logging-System.git
 
 ## Install Dependencies:
 
