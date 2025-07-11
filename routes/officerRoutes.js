@@ -1,10 +1,13 @@
+//express router
 const express = require("express");
+// Import the officer controller functions
 const {
   getOfficers,
   getOfficerById,
   updateOfficer,
   deleteOfficer,
 } = require("../controllers/officerController");
+// Import the authentication middleware
 const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();

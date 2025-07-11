@@ -1,17 +1,21 @@
 const db = require("../models");
+const { createLogger } = require("logger");
 
 const { Call, Officer, Client } = db;
+const logger = createLogger("logs/service.log");
+logger.setLevel("debug");
 
-/**
- * Log a new call
- */
+
 exports.logCall = async (officerId, callData) => {
   try {
+    logger.debug(`Logging call for officerId: ${officerId}`);
+
     const { clientId, duration, callType, callOutcome, comment, timestamp } = callData;
 
     if (clientId) {
       const clientExists = await Client.findByPk(clientId);
       if (!clientExists) {
+        logger.debug(`Client not found: ${clientId}`);
         const error = new Error("Client not found");
         error.code = "NOT_FOUND";
         throw error;
@@ -28,6 +32,8 @@ exports.logCall = async (officerId, callData) => {
       timestamp: timestamp ?? new Date(),
     });
 
+    logger.debug(`Call logged successfully with id: ${call.id}`);
+
     return {
       id: call.id,
       officerId: call.officerId,
@@ -39,15 +45,16 @@ exports.logCall = async (officerId, callData) => {
       timestamp: call.timestamp,
     };
   } catch (error) {
+    logger.error(`Error logging call: ${error.message}`);
     throw new Error(error.message || "Error logging call");
   }
 };
 
-/**
- * Fetch all calls with optional filters
- */
+
 exports.getCalls = async (filters) => {
   try {
+    logger.debug("Fetching calls with filters:", filters);
+
     const { officerId, clientId } = filters;
     const whereClause = {};
 
@@ -63,17 +70,20 @@ exports.getCalls = async (filters) => {
       order: [["timestamp", "DESC"]],
     });
 
+    logger.debug(`Fetched ${calls.length} calls`);
+
     return calls;
   } catch (error) {
+    logger.error(`Error fetching calls: ${error.message}`);
     throw new Error(error.message || "Error fetching calls");
   }
 };
 
-/**
- * Fetch a single call by ID
- */
+
 exports.getCallById = async (id) => {
   try {
+    logger.debug(`Fetching call with id: ${id}`);
+
     const call = await Call.findByPk(id, {
       include: [
         { model: Officer, as: "officer", attributes: ["id", "name", "email"] },
@@ -82,25 +92,29 @@ exports.getCallById = async (id) => {
     });
 
     if (!call) {
+      logger.debug(`Call not found with id: ${id}`);
       const error = new Error("Call not found");
       error.code = "NOT_FOUND";
       throw error;
     }
 
+    logger.debug(`Fetched call with id: ${id}`);
     return call;
   } catch (error) {
+    logger.error(`Error fetching call: ${error.message}`);
     throw new Error(error.message || "Error fetching call");
   }
 };
 
-/**
- * Update a call
- */
+
 exports.updateCall = async (id, updateData) => {
   try {
+    logger.debug(`Updating call with id: ${id}`);
+
     const call = await Call.findByPk(id);
 
     if (!call) {
+      logger.debug(`Call not found for update with id: ${id}`);
       const error = new Error("Call not found");
       error.code = "NOT_FOUND";
       throw error;
@@ -116,6 +130,8 @@ exports.updateCall = async (id, updateData) => {
 
     await call.save();
 
+    logger.debug(`Call updated successfully with id: ${id}`);
+
     return {
       id: call.id,
       officerId: call.officerId,
@@ -127,26 +143,31 @@ exports.updateCall = async (id, updateData) => {
       timestamp: call.timestamp,
     };
   } catch (error) {
+    logger.error(`Error updating call: ${error.message}`);
     throw new Error(error.message || "Error updating call");
   }
 };
 
-/**
- * Delete a call
- */
+
 exports.deleteCall = async (id) => {
   try {
+    logger.debug(`Deleting call with id: ${id}`);
+
     const call = await Call.findByPk(id);
 
     if (!call) {
+      logger.debug(`Call not found for deletion with id: ${id}`);
       const error = new Error("Call not found");
       error.code = "NOT_FOUND";
       throw error;
     }
 
     await call.destroy();
+    logger.debug(`Call deleted successfully with id: ${id}`);
+
     return true;
   } catch (error) {
+    logger.error(`Error deleting call: ${error.message}`);
     throw new Error(error.message || "Error deleting call");
   }
 };

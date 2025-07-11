@@ -1,13 +1,16 @@
 const db = require("../models");
 const { fn, col } = require("sequelize");
+const { createLogger } = require("logger");
 
 const { Call, Officer } = db;
 
-/**
- * Get daily and monthly call volumes
- */
+const logger = createLogger("logs/service.log");
+logger.setLevel("debug");
+
 exports.getCallVolumes = async () => {
   try {
+    logger.debug("Fetching daily call volumes");
+
     const dailyCalls = await Call.findAll({
       attributes: [
         [fn("date_trunc", "day", col("timestamp")), "date"],
@@ -17,6 +20,10 @@ exports.getCallVolumes = async () => {
       order: [[fn("date_trunc", "day", col("timestamp")), "ASC"]],
       raw: true,
     });
+
+    logger.debug(`Fetched ${dailyCalls.length} daily call volume records`);
+
+    logger.debug("Fetching monthly call volumes");
 
     const monthlyCalls = await Call.findAll({
       attributes: [
@@ -28,17 +35,19 @@ exports.getCallVolumes = async () => {
       raw: true,
     });
 
+    logger.debug(`Fetched ${monthlyCalls.length} monthly call volume records`);
+
     return { dailyCalls, monthlyCalls };
   } catch (error) {
+    logger.error(`Error fetching call volumes: ${error.message}`);
     throw new Error(error.message || "Error fetching call volumes");
   }
 };
 
-/**
- * Get total call time per officer
- */
 exports.getTotalCallTimePerOfficer = async () => {
   try {
+    logger.debug("Fetching total call time per officer");
+
     const callTimePerOfficer = await Call.findAll({
       attributes: [
         "officerId",
@@ -56,17 +65,25 @@ exports.getTotalCallTimePerOfficer = async () => {
       raw: true,
     });
 
+    logger.debug(
+      `Fetched call time data for ${callTimePerOfficer.length} officers`
+    );
+
     return callTimePerOfficer;
   } catch (error) {
-    throw new Error(error.message || "Error fetching total call time per officer");
+    logger.error(
+      `Error fetching total call time per officer: ${error.message}`
+    );
+    throw new Error(
+      error.message || "Error fetching total call time per officer"
+    );
   }
 };
 
-/**
- * Get calls per officer per day
- */
 exports.getCallsPerOfficerPerDay = async () => {
   try {
+    logger.debug("Fetching calls per officer per day");
+
     const callsPerOfficerPerDay = await Call.findAll({
       attributes: [
         "officerId",
@@ -80,7 +97,11 @@ exports.getCallsPerOfficerPerDay = async () => {
           attributes: ["id", "name", "email"],
         },
       ],
-      group: ["officer.id", fn("date_trunc", "day", col("timestamp")), "Call.officerId"],
+      group: [
+        "officer.id",
+        fn("date_trunc", "day", col("timestamp")),
+        "Call.officerId",
+      ],
       order: [
         [fn("date_trunc", "day", col("timestamp")), "ASC"],
         ["officerId", "ASC"],
@@ -88,8 +109,15 @@ exports.getCallsPerOfficerPerDay = async () => {
       raw: true,
     });
 
+    logger.debug(
+      `Fetched ${callsPerOfficerPerDay.length} records for calls per officer per day`
+    );
+
     return callsPerOfficerPerDay;
   } catch (error) {
-    throw new Error(error.message || "Error fetching calls per officer per day");
+    logger.error(`Error fetching calls per officer per day: ${error.message}`);
+    throw new Error(
+      error.message || "Error fetching calls per officer per day"
+    );
   }
 };
