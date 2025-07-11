@@ -1,7 +1,7 @@
 // migrations/xxxxxxxxxxxxxx-create-officers-table.js
-import { DataTypes } from "sequelize";
+const { DataTypes } = require('sequelize'); // Use require
 
-export default {
+module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable("officers", {
       id: {

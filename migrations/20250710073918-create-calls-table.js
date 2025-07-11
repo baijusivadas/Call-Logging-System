@@ -1,6 +1,6 @@
-import { DataTypes } from 'sequelize';
+const { DataTypes } = require('sequelize');
 
-export default {
+module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('calls', {
       id: {
@@ -59,6 +59,23 @@ export default {
         allowNull: false,
         type: DataTypes.DATE,
       },
+    }, {
+      // Add indexes for performance optimization
+      indexes: [
+        {
+          fields: ['officerId'], // Index for filtering by officer
+        },
+        {
+          fields: ['clientId'], // Index for filtering by client
+        },
+        {
+          fields: ['timestamp'], // Index for time-based queries (daily/monthly volumes)
+        },
+        {
+          // Composite index for common officer + time range queries
+          fields: ['officerId', 'timestamp'],
+        },
+      ]
     });
   },
   async down(queryInterface, Sequelize) {

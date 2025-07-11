@@ -11,7 +11,10 @@ const officerRoutes = require("./routes/officerRoutes.js");
 const clientRoutes = require("./routes/clientRoutes.js");
 const callRoutes = require("./routes/callRoutes.js");
 const analyticsRoutes = require("./routes/analyticsRoutes.js");
-const { apiLimiter, authLimiter } = require("./middleware/rateLimitMiddleware.js");
+const {
+  apiLimiter,
+  authLimiter,
+} = require("./middleware/rateLimitMiddleware.js");
 const { redisClient } = require("./config/redis");
 const { createLogger } = require("logger"); // Commented, see note below
 
@@ -86,7 +89,11 @@ const PORT = process.env.PORT || 3000;
   }
 
   app.listen(PORT, () => {
-    logger.info(`🚀 Server is running on port ${PORT}`);
-    console.log(`🚀 Server is running on port ${PORT}`);
+    logger.info(
+      `🚀 Server is running on port ${PORT} → http://localhost:${PORT}`
+    );
+    console.log(
+      `🚀 Server is running on port ${PORT} → http://localhost:${PORT}`
+    );
   });
 })();
